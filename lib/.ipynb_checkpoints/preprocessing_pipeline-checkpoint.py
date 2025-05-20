@@ -25,7 +25,7 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
         all_old_columns = []
         for values in transform_dict.values():
             all_old_columns.extend(values)
-        X.drop(columns=all_old_columns, inplace=True)
+        #X.drop(columns=all_old_columns, inplace=True)
 
         return X
 
@@ -53,7 +53,7 @@ class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMix
         all_old_columns = []
         for values in transform_dict.values():
             all_old_columns.extend(values)
-        X.drop(columns=all_old_columns, inplace=True)
+        #X.drop(columns=all_old_columns, inplace=True)
 
         return X
 
@@ -81,8 +81,7 @@ class FeaturesEngineeringChiIndices(BaseEstimator, TransformerMixin):
         ]
         X['Chi_sum'] = X[columns].sum(axis=1)
         X['Chi_std'] = X[columns].std(axis=1)
-        
-        X.drop(columns=columns, inplace=True)
+        #X.drop(columns=columns, inplace=True)
 
         return X
 
@@ -106,7 +105,7 @@ class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
         all_old_columns = []
         for values in transform_dict.values():
             all_old_columns.extend(values)
-        X.drop(columns=all_old_columns, inplace=True)
+        #X.drop(columns=all_old_columns, inplace=True)
 
         return X
 
@@ -138,8 +137,7 @@ class FeaturesEngineeringBCUT(BaseEstimator, TransformerMixin):
         ]
         X['BCUT2D_sum'] = X[columns].sum(axis=1)
         X['BCUT2D_std'] = X[columns].std(axis=1)
-        
-        X.drop(columns=columns, inplace=True)
+        #X.drop(columns=columns, inplace=True)
 
         return X
 
