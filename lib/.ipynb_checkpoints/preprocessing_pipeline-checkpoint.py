@@ -10,8 +10,6 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
         return self
 
     def transform(self, X, y=None):
-        # применяем метод агрегирования данных,
-        # чтобы уменьшить размерность признакового пространства без потери информации
         transform_dict = {
             'EState_VSA': ['EState_VSA1', 'EState_VSA2', 'EState_VSA3', 'EState_VSA4', 'EState_VSA5', 'EState_VSA6', 'EState_VSA7', 'EState_VSA8', 'EState_VSA9', 'EState_VSA10', 'EState_VSA11'],
             'VSA_EState': ['VSA_EState1', 'VSA_EState2', 'VSA_EState3', 'VSA_EState4', 'VSA_EState5', 'VSA_EState6', 'VSA_EState7', 'VSA_EState8', 'VSA_EState9', 'VSA_EState10'],
@@ -25,7 +23,6 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
         all_old_columns = []
         for values in transform_dict.values():
             all_old_columns.extend(values)
-        #X.drop(columns=all_old_columns, inplace=True)
 
         return X
 
@@ -42,8 +39,6 @@ class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMix
         return self
 
     def transform(self, X, y=None):
-        # применяем метод агрегирования данных,
-        # чтобы уменьшить размерность признакового пространства без потери информации
         transform_dict = {
             'FpDensityMorgan': ['FpDensityMorgan1', 'FpDensityMorgan2', 'FpDensityMorgan3'],
         }
@@ -53,7 +48,6 @@ class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMix
         all_old_columns = []
         for values in transform_dict.values():
             all_old_columns.extend(values)
-        #X.drop(columns=all_old_columns, inplace=True)
 
         return X
 
@@ -62,26 +56,23 @@ class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMix
         return self.transform(X)
 
     def aggregate_axis_data(self, row, columns):
-        sum_of_logs = sum(np.log1p(row[column]) for column in columns)
-        return sum_of_logs
+        sum_of_squares = sum(row[column]**2 for column in columns)
+        return sum_of_squares
 
 class FeaturesEngineeringChiIndices(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
 
     def transform(self, X, y=None):
-        # применяем метод агрегирования данных,
-        # чтобы уменьшить размерность признакового пространства без потери информации
         columns = [
-            'Chi0', 'Chi0n', 'Chi0v',
-            'Chi1', 'Chi1n', 'Chi1v', 
+            'Chi0', 'Chi0n',
+            'Chi1n', 'Chi1v', 
             'Chi2n', 'Chi2v',
             'Chi3n', 'Chi3v',
             'Chi4n', 'Chi4v',
         ]
         X['Chi_sum'] = X[columns].sum(axis=1)
         X['Chi_std'] = X[columns].std(axis=1)
-        #X.drop(columns=columns, inplace=True)
 
         return X
 
@@ -94,8 +85,6 @@ class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        # применяем метод агрегирования данных,
-        # чтобы уменьшить размерность признакового пространства без потери информации
         transform_dict = {
             'Kappa': ['Kappa1', 'Kappa2', 'Kappa3'],
         }
@@ -105,7 +94,6 @@ class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
         all_old_columns = []
         for values in transform_dict.values():
             all_old_columns.extend(values)
-        #X.drop(columns=all_old_columns, inplace=True)
 
         return X
 
@@ -114,17 +102,14 @@ class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
         return self.transform(X)
 
     def aggregate_axis_data(self, row, columns):
-        sum_of_logs = sum(np.log1p(row[column]) for column in columns)
-        return sum_of_logs
+        sum_of_squares = sum(row[column]**2 for column in columns)
+        return sum_of_squares
 
 class FeaturesEngineeringBCUT(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
 
     def transform(self, X, y=None):
-        # применяем метод агрегирования данных,
-        # чтобы уменьшить размерность признакового пространства без потери информации
-
         columns = [
             'BCUT2D_MWHI',
             'BCUT2D_MWLOW',
@@ -137,13 +122,39 @@ class FeaturesEngineeringBCUT(BaseEstimator, TransformerMixin):
         ]
         X['BCUT2D_sum'] = X[columns].sum(axis=1)
         X['BCUT2D_std'] = X[columns].std(axis=1)
-        #X.drop(columns=columns, inplace=True)
 
         return X
 
     def fit_transform(self, X, y=None):
         self.fit(X)
         return self.transform(X)
+
+class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Преобразует данные для создания нового признака `complex_score`.
+    
+        MaxAbsEStateIndex и qed используются для оценки электронной структуры
+        и "лекарственности" молекулы. Их произведение, дополненное
+        экспоненциальным преобразованием qed, подчеркивает влияние
+        "лекарственности".
+    
+        SPS добавляется в знаменатель, чтобы отразить фактор сложности синтеза; добавление 1 в знаменатель предотвращает деление на ноль
+    
+        Таким образом, новый признак complex_score складывает вместе влияние всех аспектов молекулы на её свойства, и этот подход может улучшить выявление скрытых взаимодействий.
+        """
+
+        X['complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(df['qed'])) / (df['SPS'] + 1)
+
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+
 
 class DataFrameScaler(BaseEstimator, TransformerMixin):
     def __init__(self):
@@ -165,5 +176,4 @@ def create_preprocessing_pipeline():
         ('features_engineering_chi', FeaturesEngineeringChiIndices()),
         ('features_kappa', FeaturesEngineeringKappa()),
         ('features_bcut', FeaturesEngineeringBCUT()),
-        #('features_fr', FeaturesEngineeringFunctionalGroups()),
     ])
