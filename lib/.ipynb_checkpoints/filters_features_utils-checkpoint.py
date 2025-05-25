@@ -8,7 +8,7 @@ def selectKBest(model, X_train, X_test, y_train, y_test):
     mae_scores = []
     r2_scores = []
     
-    for n_features in range(5, (X_train.shape[1] + 1) - 10):
+    for n_features in range(5, X_train.shape[1] + 1):
         selector = SelectKBest(score_func=f_regression, k=n_features)
         X_train_selected = selector.fit_transform(X_train, y_train)
         X_test_selected = selector.transform(X_test)
@@ -30,7 +30,7 @@ def selectRFE(model, X_train, X_test, y_train, y_test):
     mae_scores = []
     r2_scores = []
     
-    for n_features in range(5, (X_train.shape[1] + 1) - 10):
+    for n_features in range(5, X_train.shape[1] + 1):
         rfe = RFE(estimator=model, n_features_to_select=n_features)
         X_train_selected = rfe.fit_transform(X_train, y_train)
         X_test_selected = rfe.transform(X_test)
