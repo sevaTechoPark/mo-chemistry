@@ -18,10 +18,11 @@
 ├── classification_SI.ipynb       # Ноутбук с классификацией: превышает ли значение SI медианное значение выборки
 ├── classification_SI_8.ipynb     # Ноутбук с классификацией: превышает ли значение SI значение 8
 ├── data/                     
-│   ├── raw.xlsx                  # Оригинальный датасет
+│   ├── raw.xlsx                  # Оригинальный и обогащенный датасет
 │   ├── processed.csv             # Очищенный датасет
 ├── lib/                     
-│   ├── preprocessing_pipeline.py # Общий кастомный pipeline для предобработки данных
+│   ├── preprocessing_pipeline.py # Кастомный pipeline для обработки признаков
+│   ├── filters_features_utils.py # Утилиты для фильтрации признаков
 ```
 
 
