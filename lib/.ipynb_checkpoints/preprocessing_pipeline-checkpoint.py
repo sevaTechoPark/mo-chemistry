@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MaxAbsScaler
+from sklearn.preprocessing import MaxAbsScaler, StandardScaler, MinMaxScaler, Normalizer, RobustScaler, PowerTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 import math
@@ -17,22 +17,23 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
             'SMR_VSA': ['SMR_VSA1', 'SMR_VSA2', 'SMR_VSA3', 'SMR_VSA4', 'SMR_VSA5', 'SMR_VSA6', 'SMR_VSA7', 'SMR_VSA9', 'SMR_VSA10'],
             'SlogP_VSA': ['SlogP_VSA1', 'SlogP_VSA2', 'SlogP_VSA3', 'SlogP_VSA4', 'SlogP_VSA5', 'SlogP_VSA6', 'SlogP_VSA7', 'SlogP_VSA8', 'SlogP_VSA10', 'SlogP_VSA11', 'SlogP_VSA12'],
         }
+        
         for new_column, old_columns in transform_dict.items():
-            X[new_column] = X.apply(lambda row: self.aggregate_axis_data(row, old_columns), axis=1)
-
-        all_old_columns = []
-        for values in transform_dict.values():
-            all_old_columns.extend(values)
+            X[new_column + '_sum'] = X.apply(lambda row: row[old_columns].sum(), axis=1)
+            X[new_column + '_mean'] = X.apply(lambda row: row[old_columns].mean(), axis=1)
+            X[new_column + '_median'] = X.apply(lambda row: row[old_columns].median(), axis=1)
+            X[new_column + '_max'] = X.apply(lambda row: row[old_columns].max(), axis=1)
+            X[new_column + '_min'] = X.apply(lambda row: row[old_columns].min(), axis=1)
+            X[new_column + '_std'] = X.apply(lambda row: row[old_columns].std(), axis=1)
+            X[new_column + '_sqrt'] = X.apply(lambda row: (row[old_columns]**2).sum(), axis=1)
+            X[new_column + '_prod'] = X.apply(lambda row: row[old_columns].prod(), axis=1)
+            X[new_column + '_variation'] = X.apply(lambda row: row[old_columns].std() / row[old_columns].mean(), axis=1)
 
         return X
 
     def fit_transform(self, X, y=None):
         self.fit(X)
         return self.transform(X)
-
-    def aggregate_axis_data(self, row, columns):
-        sum_of_squares = sum(row[column]**2 for column in columns)
-        return math.sqrt(sum_of_squares)
 
 class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
@@ -44,10 +45,6 @@ class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMix
         }
         for new_column, old_columns in transform_dict.items():
             X[new_column] = X.apply(lambda row: self.aggregate_axis_data(row, old_columns), axis=1)
-
-        all_old_columns = []
-        for values in transform_dict.values():
-            all_old_columns.extend(values)
 
         return X
 
@@ -90,10 +87,6 @@ class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
         }
         for new_column, old_columns in transform_dict.items():
             X[new_column] = X.apply(lambda row: self.aggregate_axis_data(row, old_columns), axis=1)
-
-        all_old_columns = []
-        for values in transform_dict.values():
-            all_old_columns.extend(values)
 
         return X
 
@@ -147,7 +140,7 @@ class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
         Таким образом, новый признак complex_score складывает вместе влияние всех аспектов молекулы на её свойства, и этот подход может улучшить выявление скрытых взаимодействий.
         """
 
-        X['complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(df['qed'])) / (df['SPS'] + 1)
+        X['complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(X['qed'])) / (X['SPS'] + 1)
 
         return X
 
@@ -158,7 +151,10 @@ class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
 
 class DataFrameScaler(BaseEstimator, TransformerMixin):
     def __init__(self):
-        self.scaler = MaxAbsScaler()
+        # MinMaxScaler не сильно портит, но портит
+        # Normalizer немного портит ic, повышает немного cc, и сильно растит si
+        # PowerTransformer(method='yeo-johnson') не сильно портят
+        self.scaler = Normalizer()
 
     def fit(self, X, y=None):
         self.scaler.fit(X, y)
@@ -176,4 +172,5 @@ def create_preprocessing_pipeline():
         ('features_engineering_chi', FeaturesEngineeringChiIndices()),
         ('features_kappa', FeaturesEngineeringKappa()),
         ('features_bcut', FeaturesEngineeringBCUT()),
+        ('features_complex_score', FeaturesEngineeringComplexScore()),
     ])
