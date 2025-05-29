@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MaxAbsScaler, StandardScaler, MinMaxScaler, Normalizer, RobustScaler, PowerTransformer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer, RobustScaler, PowerTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 import math
@@ -155,18 +155,22 @@ class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
 
         X['complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(X['qed'])) / (X['SPS'] + 1)
 
+        X['balance3'] = X['FractionCSP3'] / X['Kappa1']
+        X['balance4'] = X['NumRotatableBonds'] / X['HeavyAtomCount']
+        X['balance5'] = X['FractionCSP3'] * X['MolWt']
+        X['balance6'] = X['NumHAcceptors'] + X['NumHDonors']
+
         return X
 
     def fit_transform(self, X, y=None):
         self.fit(X)
         return self.transform(X)
 
-
 class DataFrameScaler(BaseEstimator, TransformerMixin):
     def __init__(self):
-        # MinMaxScaler не сильно портит, но портит
-        # Normalizer немного портит ic, повышает немного cc, и сильно растит si
-        # PowerTransformer(method='yeo-johnson') не сильно портят
+        # StandardScaler ухудшает в большинстве, но улучшает одну из моделей
+        # Normalizer золотая середина
+        # PowerTransformer(method='yeo-johnson') улучшает IC и СС но сильно портит SI
         self.scaler = Normalizer()
 
     def fit(self, X, y=None):
@@ -187,3 +191,54 @@ def create_preprocessing_pipeline():
         ('features_kappa', FeaturesEngineeringKappa()),
         ('features_complex_score', FeaturesEngineeringComplexScore()),
     ])
+
+
+class RemoveOriginalFeatures(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        X.drop(columns=['EState_VSA1', 'EState_VSA2', 'EState_VSA3', 'EState_VSA4', 'EState_VSA5', 'EState_VSA6', 'EState_VSA7', 'EState_VSA8', 'EState_VSA9', 'EState_VSA10', 'EState_VSA11'], inplace=True)
+        X.drop(columns=['VSA_EState1', 'VSA_EState2', 'VSA_EState3', 'VSA_EState4', 'VSA_EState5', 'VSA_EState6', 'VSA_EState7', 'VSA_EState8', 'VSA_EState9', 'VSA_EState10'], inplace=True)
+        X.drop(columns=['PEOE_VSA1', 'PEOE_VSA2', 'PEOE_VSA3', 'PEOE_VSA4', 'PEOE_VSA5', 'PEOE_VSA6', 'PEOE_VSA7', 'PEOE_VSA8', 'PEOE_VSA9', 'PEOE_VSA10', 'PEOE_VSA11', 'PEOE_VSA12', 'PEOE_VSA13', 'PEOE_VSA14'], inplace=True)
+        X.drop(columns=['SMR_VSA1', 'SMR_VSA2', 'SMR_VSA3', 'SMR_VSA4', 'SMR_VSA5', 'SMR_VSA6', 'SMR_VSA7', 'SMR_VSA8', 'SMR_VSA9', 'SMR_VSA10'], inplace=True)
+        X.drop(columns=['SlogP_VSA1', 'SlogP_VSA2', 'SlogP_VSA3', 'SlogP_VSA4', 'SlogP_VSA5', 'SlogP_VSA6', 'SlogP_VSA7', 'SlogP_VSA8', 'SlogP_VSA9', 'SlogP_VSA10', 'SlogP_VSA11', 'SlogP_VSA12'], inplace=True)
+        X.drop(columns=['Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n', 'Chi1v', 'Chi2n', 'Chi2v', 'Chi3n', 'Chi3v', 'Chi4n', 'Chi4v'], inplace=True)
+        X.drop(columns=['BCUT2D_MWHI', 'BCUT2D_MWLOW', 'BCUT2D_CHGHI', 'BCUT2D_CHGLO', 'BCUT2D_LOGPHI', 'BCUT2D_LOGPLOW', 'BCUT2D_MRHI', 'BCUT2D_MRLOW'], inplace=True)
+        X.drop(columns=['FpDensityMorgan1', 'FpDensityMorgan2', 'FpDensityMorgan3'], inplace=True)
+        X.drop(columns=['Kappa1', 'Kappa2', 'Kappa3'], inplace=True)   
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+
+class RemoveConstantFeatures(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        constant_columns = [col for col in X.columns if X[col].nunique() == 1]
+        X.drop(columns=constant_columns, inplace=True) 
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+
+def create_clean_features_pipeline():
+    return Pipeline([
+        ('remove_original_features', RemoveOriginalFeatures()),
+        ('remove_constant_features', RemoveConstantFeatures()),
+    ])
+
+def create_combined_pipeline():
+    preprocessing_pipeline = create_preprocessing_pipeline()
+    clean_features_pipeline = create_clean_features_pipeline()
+
+    combined_pipeline = Pipeline(steps=[
+        ('preprocessing', preprocessing_pipeline),
+        ('cleaning', clean_features_pipeline)
+    ])
+    
+    return combined_pipeline

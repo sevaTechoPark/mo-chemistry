@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, AutoLocator
+from matplotlib.ticker import MultipleLocator
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.feature_selection import SelectKBest, f_regression, RFE, RFECV
 from sklearn.model_selection import KFold
@@ -38,9 +38,8 @@ class FeatureSelectorCV:
         return [feature for feature, rank in sorted_features]
 
     def plot_result(self):
-        n_features = np.arange(start=self.original_features_count, stop=0, step=-self.selector.step)
         mean_test_scores = self.selector.cv_results_['mean_test_score']
-        n_features = n_features[:len(mean_test_scores)]
+        n_features = np.arange(start=self.original_features_count, stop=self.original_features_count - len(mean_test_scores) * self.selector.step, step=-self.selector.step)
         
         plt.figure(figsize=(12, 6))
         plt.plot(n_features, mean_test_scores)
@@ -58,11 +57,6 @@ class FeatureSelectorCV:
         plt.ylabel("Кросс-валидационная оценка")
         plt.legend()
         plt.show()
-
-        plt.gca().xaxis.set_major_locator(AutoLocator())
-        plt.gca().yaxis.set_major_locator(AutoLocator())
-        return None
-        
 
 class FeatureSelector:
     def __init__(self, model, start_index=5, step=5):

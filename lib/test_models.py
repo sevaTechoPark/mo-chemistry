@@ -12,7 +12,7 @@ from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 
-def run_models_regressions(X_train, X_test, y_train, y_test, log_target=False):
+def run_models_regressions(X_train, X_test, y_train, y_test):
     models = {
         'Linear Regression': LinearRegression(),
         'Decision Tree': DecisionTreeRegressor(random_state=42),
@@ -27,14 +27,8 @@ def run_models_regressions(X_train, X_test, y_train, y_test, log_target=False):
 
     results = []
     for name, model in models.items():
-        if log_target:
-            y_train_log = np.log1p(y_train)
-            model.fit(X_train, y_train_log)
-            y_pred_log = model.predict(X_test)
-            y_pred = np.expm1(y_pred_log)
-        else:
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
 
         mae = mean_absolute_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
