@@ -14,10 +14,9 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
             'EState_VSA': ['EState_VSA1', 'EState_VSA2', 'EState_VSA3', 'EState_VSA4', 'EState_VSA5', 'EState_VSA6', 'EState_VSA7', 'EState_VSA8', 'EState_VSA9', 'EState_VSA10', 'EState_VSA11'],
             'VSA_EState': ['VSA_EState1', 'VSA_EState2', 'VSA_EState3', 'VSA_EState4', 'VSA_EState5', 'VSA_EState6', 'VSA_EState7', 'VSA_EState8', 'VSA_EState9', 'VSA_EState10'],
             'PEOE_VSA': ['PEOE_VSA1', 'PEOE_VSA2', 'PEOE_VSA3', 'PEOE_VSA4', 'PEOE_VSA5', 'PEOE_VSA6', 'PEOE_VSA7', 'PEOE_VSA8', 'PEOE_VSA9', 'PEOE_VSA10', 'PEOE_VSA11', 'PEOE_VSA12', 'PEOE_VSA13', 'PEOE_VSA14'],
-            'SMR_VSA': ['SMR_VSA1', 'SMR_VSA2', 'SMR_VSA3', 'SMR_VSA4', 'SMR_VSA5', 'SMR_VSA6', 'SMR_VSA7', 'SMR_VSA9', 'SMR_VSA10'],
-            'SlogP_VSA': ['SlogP_VSA1', 'SlogP_VSA2', 'SlogP_VSA3', 'SlogP_VSA4', 'SlogP_VSA5', 'SlogP_VSA6', 'SlogP_VSA7', 'SlogP_VSA8', 'SlogP_VSA10', 'SlogP_VSA11', 'SlogP_VSA12'],
+            'SMR_VSA': ['SMR_VSA1', 'SMR_VSA2', 'SMR_VSA3', 'SMR_VSA4', 'SMR_VSA5', 'SMR_VSA6', 'SMR_VSA7', 'SMR_VSA8', 'SMR_VSA9', 'SMR_VSA10'],
+            'SlogP_VSA': ['SlogP_VSA1', 'SlogP_VSA2', 'SlogP_VSA3', 'SlogP_VSA4', 'SlogP_VSA5', 'SlogP_VSA6', 'SlogP_VSA7', 'SlogP_VSA8', 'SlogP_VSA9', 'SlogP_VSA10', 'SlogP_VSA11', 'SlogP_VSA12'],
         }
-        
         for new_column, old_columns in transform_dict.items():
             X[new_column + '_sum'] = X.apply(lambda row: row[old_columns].sum(), axis=1)
             X[new_column + '_mean'] = X.apply(lambda row: row[old_columns].mean(), axis=1)
@@ -25,9 +24,68 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
             X[new_column + '_max'] = X.apply(lambda row: row[old_columns].max(), axis=1)
             X[new_column + '_min'] = X.apply(lambda row: row[old_columns].min(), axis=1)
             X[new_column + '_std'] = X.apply(lambda row: row[old_columns].std(), axis=1)
-            X[new_column + '_sqrt'] = X.apply(lambda row: (row[old_columns]**2).sum(), axis=1)
+            X[new_column + '_sqrt'] = X.apply(lambda row: ((row[old_columns]**2).sum()**(1/2)), axis=1)
             X[new_column + '_prod'] = X.apply(lambda row: row[old_columns].prod(), axis=1)
-            X[new_column + '_variation'] = X.apply(lambda row: row[old_columns].std() / row[old_columns].mean(), axis=1)
+            X[new_column + '_variation'] = X[new_column + '_std'] / X[new_column + '_mean']
+
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+
+class FeaturesEngineeringChiIndices(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        columns = [
+            'Chi0', 'Chi0n', 'Chi0v',
+            'Chi1', 'Chi1n', 'Chi1v', 
+            'Chi2n', 'Chi2v',
+            'Chi3n', 'Chi3v',
+            'Chi4n', 'Chi4v',
+        ]
+        X['Chi_sum'] = X[columns].sum(axis=1)
+        X['Chi_mean'] = X[columns].mean(axis=1)
+        X['Chi_median'] = X[columns].median(axis=1)
+        X['Chi_max'] = X[columns].max(axis=1)
+        X['Chi_min'] = X[columns].min(axis=1)
+        X['Chi_std'] = X[columns].std(axis=1)
+        X['Chi_sqrt'] = X.apply(lambda row: ((row[columns]**2).sum()**(1/2)), axis=1)
+        X['Chi_prod'] = X[columns].prod(axis=1)
+        X['Chi_variation'] = X['Chi_std'] / X['Chi_mean']
+
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+
+class FeaturesEngineeringBCUT(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        columns = [
+            'BCUT2D_MWHI',
+            'BCUT2D_MWLOW',
+            'BCUT2D_CHGHI',
+            'BCUT2D_CHGLO',
+            'BCUT2D_LOGPHI',
+            'BCUT2D_LOGPLOW',
+            'BCUT2D_MRHI',
+            'BCUT2D_MRLOW',
+        ]
+        X['BCUT2D_sum'] = X[columns].sum(axis=1)
+        X['BCUT2D_mean'] = X[columns].mean(axis=1)
+        X['BCUT2D_median'] = X[columns].median(axis=1)
+        X['BCUT2D_max'] = X[columns].max(axis=1)
+        X['BCUT2D_min'] = X[columns].min(axis=1)
+        X['BCUT2D_std'] = X[columns].std(axis=1)
+        X['BCUT2D_sqrt'] = X.apply(lambda row: ((row[columns]**2).sum()**(1/2)), axis=1)
+        X['BCUT2D_prod'] = X[columns].prod(axis=1)
+        X['BCUT2D_variation'] = X['BCUT2D_std'] / X['BCUT2D_mean']
 
         return X
 
@@ -56,27 +114,6 @@ class FeaturesEngineeringDensityMorganFingerprints(BaseEstimator, TransformerMix
         sum_of_squares = sum(row[column]**2 for column in columns)
         return sum_of_squares
 
-class FeaturesEngineeringChiIndices(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None):
-        columns = [
-            'Chi0', 'Chi0n',
-            'Chi1n', 'Chi1v', 
-            'Chi2n', 'Chi2v',
-            'Chi3n', 'Chi3v',
-            'Chi4n', 'Chi4v',
-        ]
-        X['Chi_sum'] = X[columns].sum(axis=1)
-        X['Chi_std'] = X[columns].std(axis=1)
-
-        return X
-
-    def fit_transform(self, X, y=None):
-        self.fit(X)
-        return self.transform(X)
-
 class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
@@ -97,30 +134,6 @@ class FeaturesEngineeringKappa(BaseEstimator, TransformerMixin):
     def aggregate_axis_data(self, row, columns):
         sum_of_squares = sum(row[column]**2 for column in columns)
         return sum_of_squares
-
-class FeaturesEngineeringBCUT(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None):
-        columns = [
-            'BCUT2D_MWHI',
-            'BCUT2D_MWLOW',
-            'BCUT2D_CHGHI',
-            'BCUT2D_CHGLO',
-            'BCUT2D_LOGPHI',
-            'BCUT2D_LOGPLOW',
-            'BCUT2D_MRHI',
-            'BCUT2D_MRLOW',
-        ]
-        X['BCUT2D_sum'] = X[columns].sum(axis=1)
-        X['BCUT2D_std'] = X[columns].std(axis=1)
-
-        return X
-
-    def fit_transform(self, X, y=None):
-        self.fit(X)
-        return self.transform(X)
 
 class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
@@ -168,9 +181,9 @@ def create_preprocessing_pipeline():
     return Pipeline([
         ('scaler', DataFrameScaler()),
         ('features_engineering_volumetric', FeaturesEngineeringVolumetricSurfaceMolecule()),
-        ('features_engineering_density', FeaturesEngineeringDensityMorganFingerprints()),
         ('features_engineering_chi', FeaturesEngineeringChiIndices()),
-        ('features_kappa', FeaturesEngineeringKappa()),
         ('features_bcut', FeaturesEngineeringBCUT()),
+        ('features_engineering_density', FeaturesEngineeringDensityMorganFingerprints()),
+        ('features_kappa', FeaturesEngineeringKappa()),
         ('features_complex_score', FeaturesEngineeringComplexScore()),
     ])

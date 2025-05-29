@@ -1,7 +1,67 @@
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, AutoLocator
 from sklearn.metrics import mean_absolute_error, r2_score
-from sklearn.feature_selection import SelectKBest, f_regression, RFE
+from sklearn.feature_selection import SelectKBest, f_regression, RFE, RFECV
+from sklearn.model_selection import KFold
+from sklearn.ensemble import RandomForestRegressor
 from tqdm import tqdm
+from xgboost import XGBRegressor
+
+def get_best_xgboost_features_names(X, y, count=50):
+    feature_names = X.columns
+    model = XGBRegressor().fit(X, y)
+    important_features = model.feature_importances_.argsort()[-count:]
+    return feature_names[important_features]
+
+class FeatureSelectorCV:
+    def __init__(self, step=10):
+        kf = KFold(n_splits=5, shuffle=True, random_state=42)
+        self.step = step
+        self.selector = RFECV(estimator=RandomForestRegressor(random_state=42), step=self.step, cv=kf, scoring='r2')
+        self.feature_names = []
+        self.original_features_count = None
+        self.best_features_names = []
+        
+    def fit(self, X, y):
+        self.feature_names = X.columns
+        self.original_features_count = X.shape[1]
+        kf = KFold(n_splits=5, shuffle=True, random_state=42)
+        self.selector.fit(X, y)
+
+        self.best_features_names = self._get_best_features_names()
+
+    def _get_best_features_names(self):
+        feature_ranking = self.selector.ranking_
+        features_with_ranks = list(zip(self.feature_names, feature_ranking))
+        sorted_features = sorted(features_with_ranks, key=lambda x: x[1])
+        return [feature for feature, rank in sorted_features]
+
+    def plot_result(self):
+        n_features = np.arange(start=self.original_features_count, stop=0, step=-self.selector.step)
+        mean_test_scores = self.selector.cv_results_['mean_test_score']
+        n_features = n_features[:len(mean_test_scores)]
+        
+        plt.figure(figsize=(12, 6))
+        plt.plot(n_features, mean_test_scores)
+        plt.scatter(n_features, mean_test_scores, color='red', zorder=5, label='Точки оценок')
+        
+        # x у нас должен быть перевернут, поскольку идем от большего числа признаков к меньшему
+        plt.gca().invert_xaxis()
+        
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+        plt.gca().xaxis.set_major_locator(MultipleLocator(10))
+        plt.gca().yaxis.set_major_locator(MultipleLocator(0.025))
+        
+        plt.title(f"Оптимальное количество признаков: {len(self.selector.ranking_)}")
+        plt.xlabel("Количество признаков")
+        plt.ylabel("Кросс-валидационная оценка")
+        plt.legend()
+        plt.show()
+
+        plt.gca().xaxis.set_major_locator(AutoLocator())
+        plt.gca().yaxis.set_major_locator(AutoLocator())
+        
 
 class FeatureSelector:
     def __init__(self, model, start_index=5, step=5):
@@ -36,6 +96,8 @@ class FeatureSelector:
             self.kbest_mae_scores.append(mae)
             self.kbest_r2_scores.append(r2)
 
+        self.kbest_features_index = self.kbest_r2_scores.index(max(self.kbest_r2_scores))
+
     def calculate_rfe(self, X_train, X_test, y_train, y_test):
         for n_features in tqdm(range(self.start_index, X_train.shape[1] + 1, self.step), desc="RFE Progress"):
             rfe = RFE(estimator=self.model, n_features_to_select=n_features)
@@ -52,6 +114,8 @@ class FeatureSelector:
             self.rfe_selected_features_list.append(selected_features)
             self.rfe_mae_scores.append(mae)
             self.rfe_r2_scores.append(r2)
+
+        self.rfe_features_index = self.rfe_r2_scores.index(max(self.rfe_r2_scores))
 
     def select_kbest_features(self, count):
         self.kbest_features_index = int(count / self.step) - 1
