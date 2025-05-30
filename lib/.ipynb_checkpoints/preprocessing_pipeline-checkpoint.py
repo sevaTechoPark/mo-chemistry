@@ -1,9 +1,40 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer, RobustScaler, PowerTransformer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer, RobustScaler, PowerTransformer, Binarizer
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 import math
+
+class DataFrameScaler(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        # StandardScaler ухудшает в большинстве, но улучшает одну из моделей
+        # Normalizer золотая середина
+        # PowerTransformer(method='yeo-johnson') улучшает IC и СС но сильно портит SI
+        self.scaler = Normalizer()
+
+    def fit(self, X, y=None):
+        self.scaler.fit(X, y)
+        return self
+
+    def transform(self, X):
+        X_scaled = self.scaler.transform(X)
+        return pd.DataFrame(X_scaled, index=X.index, columns=X.columns)
+
+class BinarizeFrFeatures(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        self.binarizer = Binarizer(threshold=0)
+        fr_columns = [col for col in X.columns if col.startswith('fr_')]
+        self.binarizer.fit(X[fr_columns])
+        return self
+
+    def transform(self, X, y=None):
+        fr_columns = [col for col in X.columns if col.startswith('fr_')]
+        X[fr_columns] = self.binarizer.transform(X[fr_columns])
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
 
 class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
@@ -18,15 +49,20 @@ class FeaturesEngineeringVolumetricSurfaceMolecule(BaseEstimator, TransformerMix
             'SlogP_VSA': ['SlogP_VSA1', 'SlogP_VSA2', 'SlogP_VSA3', 'SlogP_VSA4', 'SlogP_VSA5', 'SlogP_VSA6', 'SlogP_VSA7', 'SlogP_VSA8', 'SlogP_VSA9', 'SlogP_VSA10', 'SlogP_VSA11', 'SlogP_VSA12'],
         }
         for new_column, old_columns in transform_dict.items():
-            X[new_column + '_sum'] = X.apply(lambda row: row[old_columns].sum(), axis=1)
-            X[new_column + '_mean'] = X.apply(lambda row: row[old_columns].mean(), axis=1)
-            X[new_column + '_median'] = X.apply(lambda row: row[old_columns].median(), axis=1)
-            X[new_column + '_max'] = X.apply(lambda row: row[old_columns].max(), axis=1)
-            X[new_column + '_min'] = X.apply(lambda row: row[old_columns].min(), axis=1)
-            X[new_column + '_std'] = X.apply(lambda row: row[old_columns].std(), axis=1)
-            X[new_column + '_sqrt'] = X.apply(lambda row: ((row[old_columns]**2).sum()**(1/2)), axis=1)
-            X[new_column + '_prod'] = X.apply(lambda row: row[old_columns].prod(), axis=1)
-            X[new_column + '_variation'] = X[new_column + '_std'] / X[new_column + '_mean']
+            new_features = {
+                new_column + '_sum': X[old_columns].sum(axis=1),
+                new_column + '_mean': X[old_columns].mean(axis=1),
+                new_column + '_median': X[old_columns].median(axis=1),
+                new_column + '_max': X[old_columns].max(axis=1),
+                new_column + '_min': X[old_columns].min(axis=1),
+                new_column + '_std': X[old_columns].std(axis=1),
+                new_column + '_sqrt': X.apply(lambda row: ((row[old_columns]**2).sum()**(1/2)), axis=1),
+                new_column + '_prod': X[old_columns].prod(axis=1),
+                new_column + '_variation': X[old_columns].std(axis=1) / X[old_columns].mean(axis=1)
+            }
+            new_features_df = pd.DataFrame(new_features)
+            X = pd.concat([X, new_features_df], axis=1)
+
 
         return X
 
@@ -166,24 +202,10 @@ class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
         self.fit(X)
         return self.transform(X)
 
-class DataFrameScaler(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        # StandardScaler ухудшает в большинстве, но улучшает одну из моделей
-        # Normalizer золотая середина
-        # PowerTransformer(method='yeo-johnson') улучшает IC и СС но сильно портит SI
-        self.scaler = Normalizer()
-
-    def fit(self, X, y=None):
-        self.scaler.fit(X, y)
-        return self
-
-    def transform(self, X):
-        X_scaled = self.scaler.transform(X)
-        return pd.DataFrame(X_scaled, index=X.index, columns=X.columns)
-
 def create_preprocessing_pipeline():
     return Pipeline([
         ('scaler', DataFrameScaler()),
+        ('binarize_fr_features', BinarizeFrFeatures()),
         ('features_engineering_volumetric', FeaturesEngineeringVolumetricSurfaceMolecule()),
         ('features_engineering_chi', FeaturesEngineeringChiIndices()),
         ('features_bcut', FeaturesEngineeringBCUT()),

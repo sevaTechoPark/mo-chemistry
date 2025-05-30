@@ -68,11 +68,13 @@ class FeatureSelector:
         self.kbest_mae_scores = []
         self.kbest_r2_scores = []
         self.kbest_features_index = None
+        self.kbest_best_feature_names = []
 
         self.rfe_selected_features_list = []
         self.rfe_mae_scores = []
         self.rfe_r2_scores = []
         self.rfe_features_index = None
+        self.rfe_best_feature_names = []
 
     def calculate_k_best(self, X_train, X_test, y_train, y_test):
         for n_features in tqdm(range(self.start_index, X_train.shape[1] + 1, self.step), desc="K-Best Progress"):
@@ -92,6 +94,7 @@ class FeatureSelector:
             self.kbest_r2_scores.append(r2)
 
         self.kbest_features_index = self.kbest_r2_scores.index(max(self.kbest_r2_scores))
+        self.kbest_best_feature_names = self.kbest_selected_features_list[self.kbest_features_index]
 
     def calculate_rfe(self, X_train, X_test, y_train, y_test):
         for n_features in tqdm(range(self.start_index, X_train.shape[1] + 1, self.step), desc="RFE Progress"):
@@ -111,18 +114,13 @@ class FeatureSelector:
             self.rfe_r2_scores.append(r2)
 
         self.rfe_features_index = self.rfe_r2_scores.index(max(self.rfe_r2_scores))
-
-    def select_kbest_features(self, count):
-        self.kbest_features_index = int(count / self.step) - 1
+        self.rfe_best_feature_names =  self.rfe_selected_features_list[self.rfe_features_index]
 
     def print_kbest_result(self):
         kbest_selected_features = self.kbest_selected_features_list[self.kbest_features_index]
         print(f'mae: {self.kbest_mae_scores[self.kbest_features_index]}')
         print(f'r2: {self.kbest_r2_scores[self.kbest_features_index]}')
         print(kbest_selected_features)
-
-    def select_rfe_features(self, count):
-        self.rfe_features_index = int(count / self.step) - 1
 
     def print_rfe_result(self):
         rfe_selected_features = self.rfe_selected_features_list[self.rfe_features_index]

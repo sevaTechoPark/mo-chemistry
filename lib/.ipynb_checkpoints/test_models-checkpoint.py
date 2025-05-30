@@ -10,7 +10,7 @@ from sklearn.kernel_ridge import KernelRidge
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor, HistGradientBoostingRegressor, AdaBoostRegressor
 
 def run_models_regressions(X_train, X_test, y_train, y_test):
     models = {
@@ -22,6 +22,8 @@ def run_models_regressions(X_train, X_test, y_train, y_test):
         'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42),
         'LightGBM': LGBMRegressor(n_estimators=100, learning_rate=0.1, verbose=-1, max_depth=5, random_state=42),
         'CatBoost': CatBoostRegressor(iterations=100, learning_rate=0.1, depth=6, random_seed=42, verbose=0),
+        'HistGradientBoostingRegressor': HistGradientBoostingRegressor(max_iter=100, learning_rate=0.1, max_depth=3, random_state=42),
+        'AdaBoostRegressor': AdaBoostRegressor(estimator=DecisionTreeRegressor(max_depth=3), n_estimators=50, learning_rate=1.0, random_state=42),
         'Krr': KernelRidge(alpha=0.1, kernel='rbf', gamma=0.1),
     }
 
@@ -32,6 +34,9 @@ def run_models_regressions(X_train, X_test, y_train, y_test):
 
         mae = mean_absolute_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
-        results.append({'Model': name, 'Mean Absolute Error': mae, 'R2 Score': r2})
+        if r2 > 0:
+            mae = round(mae, 2)
+            r2 = round(r2, 2)
+            results.append({'Model': name, 'Mean Absolute Error': mae, 'R2 Score': r2})
 
     return pd.DataFrame(results)
