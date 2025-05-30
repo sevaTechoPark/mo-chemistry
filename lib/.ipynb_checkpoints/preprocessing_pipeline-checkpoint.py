@@ -188,13 +188,17 @@ class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
     
         Таким образом, новый признак complex_score складывает вместе влияние всех аспектов молекулы на её свойства, и этот подход может улучшить выявление скрытых взаимодействий.
         """
-
         X['complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(X['qed'])) / (X['SPS'] + 1)
 
-        X['balance3'] = X['FractionCSP3'] / X['Kappa1']
-        X['balance4'] = X['NumRotatableBonds'] / X['HeavyAtomCount']
-        X['balance5'] = X['FractionCSP3'] * X['MolWt']
-        X['balance6'] = X['NumHAcceptors'] + X['NumHDonors']
+        X['saturation1'] = X['FractionCSP3'] / X['Kappa1']
+        X['flexibility'] = X['NumRotatableBonds'] / X['HeavyAtomCount']
+        X['saturation2'] = X['FractionCSP3'] * X['MolWt']
+        X['hydrogen_bonds'] = X['NumHAcceptors'] + X['NumHDonors']
+        X['EState_Range'] = X['MaxAbsEStateIndex'] - X['MinAbsEStateIndex']
+        X['EState_Sum'] = X['MaxAbsEStateIndex'] + X['MinAbsEStateIndex']
+        X['HeavyAtomFraction'] = X['HeavyAtomMolWt'] / X['MolWt']
+        X['Charge_Range'] = X['MaxPartialCharge'] - X['MinPartialCharge']
+        X['NonAromaticRings'] = X['RingCount'] - X['NumAromaticRings']
 
         return X
 
@@ -248,10 +252,37 @@ class RemoveConstantFeatures(BaseEstimator, TransformerMixin):
         self.fit(X)
         return self.transform(X)
 
+class RemoveLinearCorrelationFeatures(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        self.threshold = 0.95
+        return self
+
+    def transform(self, X, y=None):
+        correlation_matrix = X.corr()
+
+        to_remove = set()
+    
+        for i in range(len(correlation_matrix)):
+            for j in range(i + 1, len(correlation_matrix)):
+                if abs(correlation_matrix.iloc[i, j]) >= self.threshold:
+                    col1 = correlation_matrix.columns[i]
+                    col2 = correlation_matrix.columns[j]
+                    if col2 not in to_remove:
+                        to_remove.add(col2)
+    
+        X.drop(columns=to_remove, inplace=True)
+        return X
+
+    def fit_transform(self, X, y=None):
+        self.fit(X)
+        return self.transform(X)
+
 def create_clean_features_pipeline():
     return Pipeline([
         ('remove_original_features', RemoveOriginalFeatures()),
         ('remove_constant_features', RemoveConstantFeatures()),
+        ('remove_linear_correlation_features', RemoveLinearCorrelationFeatures()),
+        
     ])
 
 def create_combined_pipeline():
