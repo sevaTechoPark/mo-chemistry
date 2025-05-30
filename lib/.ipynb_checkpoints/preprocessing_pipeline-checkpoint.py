@@ -188,12 +188,12 @@ class FeaturesEngineeringComplexScore(BaseEstimator, TransformerMixin):
     
         Таким образом, новый признак complex_score складывает вместе влияние всех аспектов молекулы на её свойства, и этот подход может улучшить выявление скрытых взаимодействий.
         """
-        X['complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(X['qed'])) / (X['SPS'] + 1)
+        X['Complex_score'] = (X['MaxAbsEStateIndex'] * np.exp(X['qed'])) / (X['SPS'] + 1)
 
-        X['saturation1'] = X['FractionCSP3'] / X['Kappa1']
-        X['flexibility'] = X['NumRotatableBonds'] / X['HeavyAtomCount']
-        X['saturation2'] = X['FractionCSP3'] * X['MolWt']
-        X['hydrogen_bonds'] = X['NumHAcceptors'] + X['NumHDonors']
+        X['Saturation1'] = X['FractionCSP3'] / X['Kappa1']
+        X['Flexibility'] = X['NumRotatableBonds'] / X['HeavyAtomCount']
+        X['Saturation2'] = X['FractionCSP3'] * X['MolWt']
+        X['Hydrogen_bonds'] = X['NumHAcceptors'] + X['NumHDonors']
         X['EState_Range'] = X['MaxAbsEStateIndex'] - X['MinAbsEStateIndex']
         X['EState_Sum'] = X['MaxAbsEStateIndex'] + X['MinAbsEStateIndex']
         X['HeavyAtomFraction'] = X['HeavyAtomMolWt'] / X['MolWt']
