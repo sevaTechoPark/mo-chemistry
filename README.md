@@ -24,9 +24,3 @@
 │   ├── preprocessing_pipeline.py # Кастомный pipeline для обработки признаков
 │   ├── filters_features_utils.py # Утилиты для фильтрации признаков
 ```
-
-__pycache__
-.DS_Store
-
-
-
