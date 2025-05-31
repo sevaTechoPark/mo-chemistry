@@ -244,6 +244,7 @@ class RemoveConstantFeatures(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
+        # удалим признаки, которые имеют постоянное значение, так как они не несут полезной информации
         constant_columns = [col for col in X.columns if X[col].nunique() == 1]
         X.drop(columns=constant_columns, inplace=True) 
         return X
