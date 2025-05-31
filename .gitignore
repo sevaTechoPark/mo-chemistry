@@ -1,4 +1,7 @@
 catboost_info
-__pycache__
 .DS_Store
+__pycache__
 .ipynb_checkpoints
+lib/.ipynb_checkpoints/
+data/.ipynb_checkpoints/
+lib/__pycache__/

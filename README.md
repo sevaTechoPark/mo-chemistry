@@ -9,7 +9,7 @@
 # 📂 Структура проекта
 ```
 ├── README.md
-├── analysis.ipynb                # Ноутбук с анализом и преодобработкой данных
+├── analysis.ipynb                # Ноутбук с анализом данных
 ├── regression_CC50.ipynb         # Ноутбук с регрессия для CC50
 ├── regression_IC50.ipynb         # Ноутбук с регрессия для IC50
 ├── regression_SI.ipynb           # Ноутбук с регрессия для SI
@@ -23,4 +23,6 @@
 ├── lib/                     
 │   ├── preprocessing_pipeline.py # Кастомный pipeline для обработки признаков
 │   ├── filters_features_utils.py # Утилиты для фильтрации признаков
+│   ├── test_models.py            # Запуск моделей для сравнения
+│   ├── common_utils.py           # Общие утилиты
 ```
