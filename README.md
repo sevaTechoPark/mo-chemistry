@@ -26,3 +26,7 @@
 │   ├── test_models.py            # Запуск моделей для сравнения
 │   ├── common_utils.py           # Общие утилиты
 ```
+
+# Пояснительная записка
+
+https://docs.google.com/document/d/1O6zRi67iDZJGQSmMIZ7IXCg_ihfXkpE8isqbPD0aIv8/edit?usp=sharing
