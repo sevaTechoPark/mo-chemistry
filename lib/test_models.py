@@ -11,7 +11,6 @@ from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from sklearn.ensemble import GradientBoostingRegressor, HistGradientBoostingRegressor, AdaBoostRegressor
-from sklearn.naive_bayes import GaussianNB
 
 def run_models_regressions(X_train, X_test, y_train, y_test):
     models = {
@@ -53,6 +52,7 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier, HistGradientBoostingClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
 
 def run_models_classifications(X_train, X_test, y_train, y_test):
     models = {

@@ -8,7 +8,8 @@
 
 # 📂 Структура проекта
 ```
-├── README.md
+├── README.md                     # Описание репозитория
+├── Analytical_report.pdf         # Аналитический отчет
 ├── analysis.ipynb                # Ноутбук с анализом данных
 ├── regression_CC50.ipynb         # Ноутбук с регрессия для CC50
 ├── regression_IC50.ipynb         # Ноутбук с регрессия для IC50
@@ -27,6 +28,6 @@
 │   ├── common_utils.py           # Общие утилиты
 ```
 
-# Пояснительная записка
+# Аналитический отчёт
 
 https://docs.google.com/document/d/1O6zRi67iDZJGQSmMIZ7IXCg_ihfXkpE8isqbPD0aIv8/edit?usp=sharing
